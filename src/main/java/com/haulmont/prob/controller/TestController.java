@@ -1,16 +1,17 @@
 package com.haulmont.prob.controller;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/employees")
-
+@RequestMapping("/api/test")  // Изменён путь
 public class TestController {
-    @PostMapping
+    @PostMapping("/echo")
     public String test(@RequestBody String body) {
-        return "Received: " + body;
+        return "Echo: " + body;
+    }
+
+    @GetMapping("/number")
+    public int getNumber() {
+        return 42;  // Просто возвращаем число
     }
 }
