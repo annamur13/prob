@@ -2,46 +2,50 @@ package com.haulmont.prob.controller;
 
 import com.haulmont.prob.model.Employee;
 import com.haulmont.prob.repository.EmployeeRepository;
+import com.haulmont.prob.repository.tezis.TezisTaskCount;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
+import java.util.Optional;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/probs")
+
 public class ProbsController {
 
     private final EmployeeRepository employeeRepository;
     private final JdbcTemplate thesisJdbcTemplate;
+    private final TezisTaskCount tezisTaskCount;
 
     public ProbsController(
             EmployeeRepository employeeRepository,
-            @Qualifier("thesisJdbcTemplate") JdbcTemplate thesisJdbcTemplate) {
+            @Qualifier("thesisJdbcTemplate") JdbcTemplate thesisJdbcTemplate,
+            TezisTaskCount tezisTaskCount) {
         this.employeeRepository = employeeRepository;
         this.thesisJdbcTemplate = thesisJdbcTemplate;
+        this.tezisTaskCount = tezisTaskCount;
     }
 
     @PostMapping("/echo")
-    public String test(@RequestBody String body) {
-        log.info("Received echo request with body: {}", body);
+    public String echoEndpoint(@RequestBody String body) {
+        log.debug("Echo endpoint called with body: {}", body);
         return "Echo: " + body;
     }
 
     @GetMapping("/probability")
-    public String probability(@RequestParam UUID user_id) {
+    public String getEmployeeProbability(@RequestParam UUID user_id) {
         log.info("Processing probability request for user_id: {}", user_id);
 
-        return employeeRepository.findByTezisId(user_id)
-                .map(employee -> {
-                    log.debug("Employee found in local DB: {}", employee);
-                    return String.valueOf(employee.getId());
-                })
-                .orElseGet(() -> createEmployeeFromThesisDb(user_id));
-    }
+        Optional<Employee> employeeOpt = employeeRepository.findByTezisId(user_id);
 
-    private String createEmployeeFromThesisDb(UUID user_id) {
+        if (employeeOpt.isPresent()) {
+            return String.valueOf(employeeOpt.get().getId());
+        }
+
+        // Если сотрудника нет в основной БД, ищем в тезис БД
         try {
             String fullName = thesisJdbcTemplate.queryForObject(
                     "SELECT name FROM sec_user WHERE id = ?",
@@ -50,7 +54,7 @@ public class ProbsController {
             );
 
             if (fullName == null) {
-                log.error("User not found in thesis DB: {}", user_id);
+                log.error("User not found in both databases: {}", user_id);
                 throw new UserNotFoundException(user_id);
             }
 
@@ -61,23 +65,32 @@ public class ProbsController {
             Employee savedEmployee = employeeRepository.save(newEmployee);
             log.info("Created new employee from thesis DB: {}", savedEmployee);
 
-            return String.valueOf(savedEmployee.getId());
+            log.info("Fetching task count for user: {}", user_id);
+            long taskCount = tezisTaskCount.getAssignedTaskCount(user_id);
+
+            return String.valueOf(taskCount);
 
         } catch (Exception e) {
-            log.error("Error while fetching user from thesis DB", e);
-            throw new DataAccessException("Failed to access thesis database", e);
+            log.error("Database access error", e);
+            throw new DatabaseAccessException("Failed to access database", e);
         }
     }
 
-    // Custom exceptions
+    @GetMapping("/task-count")
+    public long getAssignedTaskCount(@RequestParam UUID user_id) {
+        log.info("Fetching task count for user: {}", user_id);
+        return tezisTaskCount.getAssignedTaskCount(user_id);
+    }
+
+    // Exception classes
     private static class UserNotFoundException extends RuntimeException {
         public UserNotFoundException(UUID userId) {
-            super("User with id " + userId + " not found in thesis database");
+            super("User with ID " + userId + " not found in any database");
         }
     }
 
-    private static class DataAccessException extends RuntimeException {
-        public DataAccessException(String message, Throwable cause) {
+    private static class DatabaseAccessException extends RuntimeException {
+        public DatabaseAccessException(String message, Throwable cause) {
             super(message, cause);
         }
     }
