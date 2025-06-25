@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.util.List; // Добавлен импорт List
 import java.util.ArrayList; // Добавлен импорт ArrayList
+import java.util.UUID;
 
 @Data
 @Entity
@@ -21,7 +22,7 @@ public class Employee {
 
     @Column(name = "tezis_id", nullable = false, unique = true)
     @JsonProperty("tezisId")
-    private String tezisId;
+    private UUID tezisId;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Statistics> statistics = new ArrayList<>();

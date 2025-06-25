@@ -16,8 +16,8 @@ public class Statistics {
     @Column(name = "probability", nullable = false)
     private Double probability;
 
-    @Column(name = "date", nullable = false)
-    private LocalDate date;
+    @Column(name = "createdDate", nullable = false)
+    private LocalDate createdDate;
 
     @Column(name = "task_id", nullable = false)
     private String taskId;
@@ -25,4 +25,5 @@ public class Statistics {
     @ManyToOne
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
+
 }

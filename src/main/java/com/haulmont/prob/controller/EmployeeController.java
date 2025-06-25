@@ -1,66 +1,82 @@
 package com.haulmont.prob.controller;
 
 import com.haulmont.prob.model.Employee;
+import com.haulmont.prob.model.Statistics;
 import com.haulmont.prob.repository.EmployeeRepository;
+import com.haulmont.prob.repository.StatisticsRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/employees") // Базовый путь для всех endpoint'ов
+@RequestMapping("/api/employees")
 public class EmployeeController {
 
-    private final EmployeeRepository repository;
+    private final EmployeeRepository employeeRepository;
+    private final StatisticsRepository statisticsRepository;
 
-    public EmployeeController(EmployeeRepository repository) {
-        this.repository = repository;
+    public EmployeeController(EmployeeRepository employeeRepository,
+                              StatisticsRepository statisticsRepository) {
+        this.employeeRepository = employeeRepository;
+        this.statisticsRepository = statisticsRepository;
     }
 
-    // Получение всех сотрудников
+    /**
+     * Получение всех сотрудников
+     */
     @GetMapping
-    public ResponseEntity<List<Employee>> getAll() {
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<List<Employee>> getAllEmployees() {
         try {
-            List<Employee> employees = repository.findAll();
-            return new ResponseEntity<>(employees, HttpStatus.OK);
+            List<Employee> employees = employeeRepository.findAll();
+            return ResponseEntity.ok(employees);
         } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // Создание нового сотрудника (с проверкой tezisId)
-    @PostMapping
-    public ResponseEntity<?> create(@RequestBody Map<String, String> request) {
-        System.out.println("Received: " + request);
+    /**
+     * Получение сотрудников, у которых есть статистика
+     */
+    @GetMapping("/with-statistics")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<List<Employee>> getEmployeesWithStatistics() {
+        try {
+            List<Employee> employees = employeeRepository.findAll().stream()
+                    .filter(employee -> statisticsRepository.existsByEmployeeId(employee.getId()))
+                    .collect(Collectors.toList());
 
-        // Проверка обязательных полей
-        if (!request.containsKey("fullName")) {
-            return ResponseEntity.badRequest().body("Missing fullName");
+            return ResponseEntity.ok(employees);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
         }
-        if (!request.containsKey("tezisId")) {
-            return ResponseEntity.badRequest().body("Missing tezisId");
-        }
-
-        // Проверка уникальности tezisId
-        if (repository.existsByTezisId(request.get("tezisId"))) {
-            return ResponseEntity.badRequest().body("Employee with this tezisId already exists");
-        }
-
-        Employee employee = new Employee();
-        employee.setFullName(request.get("fullName"));
-        employee.setTezisId(request.get("tezisId"));
-
-        Employee saved = repository.save(employee);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    // Получение сотрудника по tezisId
-    @GetMapping("/by-tezis-id/{tezisId}")
-    public ResponseEntity<Employee> getByTezisId(@PathVariable String tezisId) {
-        return repository.findByTezisId(tezisId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+
+
+    /**
+     * Получение статистики по конкретному сотруднику (по tezisId)
+     */
+    @GetMapping("/{tezisId}/statistics")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> getEmployeeStatistics(@PathVariable UUID tezisId) {
+        try {
+            Optional<Employee> employee = employeeRepository.findByTezisId(tezisId);
+            if (employee.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            List<Statistics> statistics = statisticsRepository.findByEmployeeId(employee.get().getId());
+            return ResponseEntity.ok(statistics);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error retrieving statistics");
+        }
     }
 }
