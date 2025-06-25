@@ -3,6 +3,7 @@ package com.haulmont.prob.controller;
 import com.haulmont.prob.model.Employee;
 import com.haulmont.prob.repository.EmployeeRepository;
 import com.haulmont.prob.repository.tezis.TezisTaskCount;
+import com.haulmont.prob.repository.tezis.TezisTaskProbability;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -13,20 +14,22 @@ import java.util.Optional;
 @Slf4j
 @RestController
 @RequestMapping("/api/probs")
-
 public class ProbsController {
 
     private final EmployeeRepository employeeRepository;
     private final JdbcTemplate thesisJdbcTemplate;
     private final TezisTaskCount tezisTaskCount;
+    private final TezisTaskProbability probabilityCalculator;
 
     public ProbsController(
             EmployeeRepository employeeRepository,
             @Qualifier("thesisJdbcTemplate") JdbcTemplate thesisJdbcTemplate,
-            TezisTaskCount tezisTaskCount) {
+            TezisTaskCount tezisTaskCount,
+            TezisTaskProbability probabilityCalculator) {
         this.employeeRepository = employeeRepository;
         this.thesisJdbcTemplate = thesisJdbcTemplate;
         this.tezisTaskCount = tezisTaskCount;
+        this.probabilityCalculator = probabilityCalculator;
     }
 
     @PostMapping("/echo")
@@ -45,7 +48,6 @@ public class ProbsController {
             return String.valueOf(employeeOpt.get().getId());
         }
 
-        // Если сотрудника нет в основной БД, ищем в тезис БД
         try {
             String fullName = thesisJdbcTemplate.queryForObject(
                     "SELECT name FROM sec_user WHERE id = ?",
@@ -80,6 +82,13 @@ public class ProbsController {
     public long getAssignedTaskCount(@RequestParam UUID user_id) {
         log.info("Fetching task count for user: {}", user_id);
         return tezisTaskCount.getAssignedTaskCount(user_id);
+    }
+
+    @GetMapping("/calculate-probability")
+    public double calculateTaskProbability(@RequestParam UUID user_id) {
+        log.info("Calculating task probability for user: {}", user_id);
+        long taskCount = tezisTaskCount.getAssignedTaskCount(user_id);
+        return probabilityCalculator.calculateProbability(taskCount);
     }
 
     // Exception classes
