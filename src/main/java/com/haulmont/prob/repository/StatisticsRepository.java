@@ -1,17 +1,16 @@
 package com.haulmont.prob.repository;
 
 import com.haulmont.prob.model.Statistics;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 public interface StatisticsRepository extends JpaRepository<Statistics, Long> {
-
+    @Qualifier
     // Базовые методы CRUD уже предоставляются JpaRepository
 
     // === Методы для работы с сотрудниками ===
@@ -55,33 +54,7 @@ public interface StatisticsRepository extends JpaRepository<Statistics, Long> {
     /**
      * Найти статистику по ID задачи
      */
-    List<Statistics> findByTaskId(String taskId);
+    List<Statistics> findByTaskId(String taskId); // Метод принимает String
 
-    /**
-     * Найти статистику по ID задачи и сотрудника
-     */
-    List<Statistics> findByTaskIdAndEmployeeId(String taskId, Long employeeId);
 
-    /**
-     * Проверить существование статистики по ID задачи
-     */
-    boolean existsByTaskId(String taskId);
-
-    // === Комбинированные методы ===
-
-    /**
-     * Найти статистику по вероятности (больше или равно)
-     */
-    List<Statistics> findByProbabilityGreaterThanEqual(Double probability);
-
-    /**
-     * Найти статистику по вероятности (диапазон)
-     */
-    List<Statistics> findByProbabilityBetween(Double minProbability, Double maxProbability);
-
-    /**
-     * Найти последнюю запись статистики по сотруднику
-     */
-    @Query("SELECT s FROM Statistics s WHERE s.employee.id = :employeeId ORDER BY s.createdDate DESC LIMIT 1")
-    Optional<Statistics> findLatestByEmployeeId(@Param("employeeId") Long employeeId);
 }

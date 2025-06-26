@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import java.util.UUID;
 
+
 @Component
 public class TezisTaskCount {
 

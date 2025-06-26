@@ -3,6 +3,7 @@ package com.haulmont.prob.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Data
 @Entity
@@ -16,14 +17,14 @@ public class Statistics {
     @Column(name = "probability", nullable = false)
     private Double probability;
 
-    @Column(name = "createdDate", nullable = false)
+    @Column(name = "created_date", nullable = false)
     private LocalDate createdDate;
 
-    @Column(name = "task_id", nullable = false)
+    @Column(name = "task_id", length = 36)
     private String taskId;
-
     @ManyToOne
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
 
+    // Конструкторы остаются без изменений
 }
