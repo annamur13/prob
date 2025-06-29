@@ -5,6 +5,7 @@ import com.haulmont.prob.model.Statistics;
 import com.haulmont.prob.repository.EmployeeRepository;
 import com.haulmont.prob.repository.tezis.TezisTaskCount;
 import com.haulmont.prob.repository.tezis.TezisTaskProbability;
+import com.haulmont.prob.repository.tezis.TezisTaskTextSize;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -28,17 +29,19 @@ public class ProbsController {
     private final EmployeeRepository employeeRepository;
     private final JdbcTemplate thesisJdbcTemplate;
     private final TezisTaskCount tezisTaskCount;
+    private final TezisTaskTextSize tezisTextSize;
     private final TezisTaskProbability probabilityCalculator;
 
     public ProbsController(
             EmployeeRepository employeeRepository,
             @Qualifier("thesisJdbcTemplate") JdbcTemplate thesisJdbcTemplate,
-            TezisTaskCount tezisTaskCount,
+            TezisTaskCount tezisTaskCount, TezisTaskTextSize tezisTextSize,
             TezisTaskProbability probabilityCalculator) {
         this.employeeRepository = employeeRepository;
         this.thesisJdbcTemplate = thesisJdbcTemplate;
         this.tezisTaskCount = tezisTaskCount;
         this.probabilityCalculator = probabilityCalculator;
+        this.tezisTextSize = tezisTextSize;
     }
 
     @PostMapping("/echo")
@@ -61,7 +64,7 @@ public class ProbsController {
             log.info("Calculating task probability for user: {}", user_id);
 
             long taskCount = tezisTaskCount.getAssignedTaskCount(user_id);
-            long textSize = tezisTaskCount.getAssignedTaskCount(user_id);
+            long textSize = tezisTextSize.getTextSizeCount(task_id);
 
             double probability = probabilityCalculator.calculateProbability(taskCount, textSize);
 
@@ -89,7 +92,7 @@ public class ProbsController {
             Statistics stat = new Statistics();
             stat.setProbability(probability);
             stat.setCreatedDate(LocalDate.now());
-            stat.setTaskId("N/A");
+            stat.setTaskId(String.valueOf(task_id));
             stat.setEmployee(employee);
             log.info("Saving stat with date: {}", stat.getCreatedDate());
             // Инициализируем список, если null
