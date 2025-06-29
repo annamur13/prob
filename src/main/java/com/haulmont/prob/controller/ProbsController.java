@@ -47,7 +47,7 @@ public class ProbsController {
         return "Echo: " + body;
     }
 
-    @GetMapping("/probability")
+    /**@GetMapping("/probability")
     @Transactional
     public String getEmployeeProbability(@RequestParam UUID user_id) {
         log.info("Processing probability request for user_id: {}", user_id);
@@ -82,7 +82,7 @@ public class ProbsController {
                         throw new DatabaseAccessException("Failed to access database", e);
                     }
                 });
-    }
+    }**/
 
     @GetMapping("/task-count")
     public long getAssignedTaskCount(@RequestParam UUID user_id) {
@@ -92,12 +92,14 @@ public class ProbsController {
 
     @GetMapping("/calculate-probability")
     @Transactional
-    public ResponseEntity<?> calculateTaskProbability(@RequestParam UUID user_id) {
+    public ResponseEntity<?> calculateTaskProbability(@RequestParam UUID user_id, @RequestParam UUID task_id) {
         try {
             log.info("Calculating task probability for user: {}", user_id);
 
             long taskCount = tezisTaskCount.getAssignedTaskCount(user_id);
-            double probability = probabilityCalculator.calculateProbability(taskCount);
+            long textSize = tezisTaskCount.getAssignedTaskCount(user_id);
+
+            double probability = probabilityCalculator.calculateProbability(taskCount, textSize);
 
             Employee employee = employeeRepository.findByTezisId(user_id).orElseGet(() -> {
                 String fullName = thesisJdbcTemplate.queryForObject(
