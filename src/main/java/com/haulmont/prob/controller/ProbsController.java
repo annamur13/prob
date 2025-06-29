@@ -47,42 +47,6 @@ public class ProbsController {
         return "Echo: " + body;
     }
 
-    /**@GetMapping("/probability")
-    @Transactional
-    public String getEmployeeProbability(@RequestParam UUID user_id) {
-        log.info("Processing probability request for user_id: {}", user_id);
-
-        return employeeRepository.findByTezisId(user_id)
-                .map(Employee::getId)
-                .map(String::valueOf)
-                .orElseGet(() -> {
-                    try {
-                        String fullName = thesisJdbcTemplate.queryForObject(
-                                "SELECT name FROM sec_user WHERE id = ?",
-                                String.class,
-                                user_id
-                        );
-
-                        if (fullName == null) {
-                            throw new UserNotFoundException(user_id);
-                        }
-
-                        Employee newEmployee = new Employee();
-                        newEmployee.setTezisId(user_id);
-                        newEmployee.setFullName(fullName);
-
-                        Employee saved = employeeRepository.saveAndFlush(newEmployee); // save + flush
-
-                        log.info("New employee saved: {}", saved);
-                        long taskCount = tezisTaskCount.getAssignedTaskCount(user_id);
-                        return String.valueOf(taskCount);
-
-                    } catch (DataAccessException e) {
-                        log.error("Database access error", e);
-                        throw new DatabaseAccessException("Failed to access database", e);
-                    }
-                });
-    }**/
 
     @GetMapping("/task-count")
     public long getAssignedTaskCount(@RequestParam UUID user_id) {

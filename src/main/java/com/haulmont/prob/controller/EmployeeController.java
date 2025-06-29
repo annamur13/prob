@@ -78,7 +78,7 @@ public class EmployeeController {
             }
             log.info("Found employee: {}", employee.get().getId());
 
-            List<Statistics> statistics = statisticsRepository.findByEmployeeId(employee.get().getId());
+            List<Statistics> statistics = statisticsRepository.findByEmployee(employee.get().getId());
             log.info("Found {} statistics records", statistics.size());
 
             return ResponseEntity.ok(statistics);

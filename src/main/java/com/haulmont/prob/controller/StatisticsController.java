@@ -37,20 +37,7 @@ public class StatisticsController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<List<Statistics>> getStatisticsByEmployeeId(
             @PathVariable Long employeeId) {
-        List<Statistics> statistics = statisticsRepository.findByEmployeeId(employeeId);
-        return statistics.isEmpty() ?
-                ResponseEntity.noContent().build() :
-                ResponseEntity.ok(statistics);
-    }
-
-    /**
-     * Получение статистики по tezisId сотрудника
-     */
-    @GetMapping("/employee/by-tezis-id/{tezisId}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<List<Statistics>> getStatisticsByEmployeeTezisId(
-            @PathVariable String tezisId) {
-        List<Statistics> statistics = statisticsRepository.findByEmployeeTezisId(tezisId);
+        List<Statistics> statistics = statisticsRepository.findByEmployee(employeeId);
         return statistics.isEmpty() ?
                 ResponseEntity.noContent().build() :
                 ResponseEntity.ok(statistics);

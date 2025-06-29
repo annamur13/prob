@@ -18,7 +18,8 @@ public interface StatisticsRepository extends JpaRepository<Statistics, Long> {
     /**
      * Найти всю статистику по ID сотрудника
      */
-    List<Statistics> findByEmployeeId(Long employeeId);
+    @Query("SELECT s FROM Statistics s INNER JOIN s.employee e WHERE e.id = :employee_id")
+    List<Statistics> findByEmployee(@Param("employee_id") Long employee_id);
 
     /**
      * Проверить существование статистики по ID сотрудника

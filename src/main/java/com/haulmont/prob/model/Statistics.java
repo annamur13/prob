@@ -1,5 +1,6 @@
 package com.haulmont.prob.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
@@ -22,9 +23,18 @@ public class Statistics {
 
     @Column(name = "task_id", length = 36)
     private String taskId;
+
     @ManyToOne
-    @JoinColumn(name = "employee_id", nullable = false)
+    @JoinColumn(name = "employee", nullable = false)
+    @JsonIgnore
     private Employee employee;
 
-    // Конструкторы остаются без изменений
+    @Override
+    public String toString() {
+        return "Statistics{" +
+                "id=" + id +
+                ", probability=" + probability +
+                '}';
+    }
+// Конструкторы остаются без изменений
 }
